@@ -15,13 +15,7 @@ object Pizza {
 
 	val MAX_TIME = 1000 * 1000 * 1000
 
-	val PARSE_ORDER_RE = "\\s{2}".r
-
-	val DEBUG_OPT = "--debug"
-
-	val HELP_OPT = "--help"
-
-	var DEBUG = false
+	val PARSE_ORDER_RE = "\\s+".r
 
 	def isOrdersQueueSizeValid(size: Int) = size >= MIN_ORDERS && size <= MAX_ORDERS
 
@@ -33,36 +27,9 @@ object Pizza {
 
 	def main(args: Array[String]): Unit = {
 
-		if(args.contains(DEBUG_OPT)) {
-			DEBUG = true
-		}
-
-		if(args.contains(HELP_OPT)) {
-			printHelp()
-			System.exit(0)
-		}
-
 		val result = process(Source.stdin.getLines.toList)
 
 		println(result)
-
-	}
-
-	def printHelp() {
-		println(
-			"""
-				|It calculates mininimal averege waiting time for queue.
-				|Input data format:
-				|N - total number of orders
-				|T1  L1 - the moment of time when customer has entered and time to cook this pizza
-				|....
-				|Tn  Ln
-				|
-				|Options:
-				|--help - prints this document
-				|--debug - more verbose error info
-			""".stripMargin
-		)
 	}
 
 	def process(data: List[String]): Int = {
@@ -80,14 +47,18 @@ object Pizza {
 		if(queueSize == 0){
 			0
 		} else {
-			val first = orders.head
-			val total = calcTotalWaitingTime(orders.tail, first.size, first.time + first.size)
+			val total = calcTotalWaitingTime(orders)
 			(total / queueSize).toInt
 		}
 	}
 
+	def calcTotalWaitingTime(orders: List[Order]): Int = {
+		val first = orders.head
+		calcTotalWaitingTimeRec(orders.tail, first.size, first.time + first.size)
+	}
+
 	@tailrec
-	def calcTotalWaitingTime(rest: List[Order], accWaitingTime: Int, currentTime: Int): Int = {
+	def calcTotalWaitingTimeRec(rest: List[Order], accWaitingTime: Int, currentTime: Int): Int = {
 		if (rest.isEmpty) {
 			accWaitingTime
 		} else {
@@ -101,7 +72,7 @@ object Pizza {
 				}
 			}
 			val todoList = rest.filter(_.time != next.time)
-			calcTotalWaitingTime(todoList, accWaitingTime + nextWT, currentTime + nextWT)
+			calcTotalWaitingTimeRec(todoList, accWaitingTime + nextWT, currentTime + nextWT)
 		}
 	}
 
