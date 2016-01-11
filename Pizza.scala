@@ -24,7 +24,7 @@ object Pizza {
 
 	def isPizzaSizeValid(size: Int) = size >= MIN_PIZZA_SIZE && size <= MAX_PIZZA_SIZE
 
-	case class Order(time: Int, size: Int = 1)
+	case class Order(time: Int, size: Int)
 
 	def main(args: Array[String]): Unit = {
 
@@ -43,37 +43,40 @@ object Pizza {
 			throw new Exception("Orders queue size != $queueSize")
 		}
 
-		val orders = ordersRaw.map(parseOrder).map()
-		val ordersTree = SortedSet(orders: _*)
+		val orders = ordersRaw.map(parseOrder)
 		if(queueSize == 0){
 			0
 		} else {
-			val total = calcTotalWaitingTime(ordersTree)
+			val total = calcTotalWaitingTime(orders)
 			(total / queueSize).toInt
 		}
 	}
 
-	def calcTotalWaitingTime(orders: SortedMap[Order]): Int = {
+	def calcTotalWaitingTime(orders: List[Order]): Int = {
 		val first = orders.head
-		calcTotalWaitingTimeRec(orders.tail, first.size, first.time + first.size)
+		val tree = SortedMap(orders.map(o => o.time -> o): _*) - first.time
+		calcTotalWaitingTimeRec(tree, first.size, first.time + first.size)
 	}
 
-	//In fact, complexity O(n^2) 
+	//Uses TreeMap to take subtrees more effective, in a typical 
+	//situation it will require O(NLogN) operations, however in the worst 
+	//case it will be O(N^2)
 	@tailrec
-	def calcTotalWaitingTimeRec(rest: SortedMap[Order], accWaitingTime: Int, currentTime: Int): Int = {
-		if (rest.isEmpty) {
+	def calcTotalWaitingTimeRec(tree: SortedMap[Int, Order], accWaitingTime: Int, currentTime: Int): Int = {
+		if (tree.isEmpty) {
 			accWaitingTime
 		} else {
-			val (next, nextWT) = {
-				val waitingOrders = rest.to(Order(currentTime))
+			val (next:Order, nextWT:Int) = {
+				val waitingOrders = tree.to(currentTime)
 				if (waitingOrders.isEmpty) {
-					(rest.head, rest.head.size)
+					val min = tree.get(tree.keySet.min)
+					(min, min.size)
 				} else {
-					val min = waitingOrders.minBy(_.size)
+					val min = waitingOrders.values.minBy(_.size)
 					(min, (currentTime - min.time) + min.size)
 				}
 			}
-			val todoList = rest.filter(_.time != next.time)
+			val todoList = tree - next.time
 			calcTotalWaitingTimeRec(todoList, accWaitingTime + nextWT, currentTime + nextWT)
 		}
 	}

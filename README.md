@@ -13,6 +13,7 @@ Li - time which is required to handle the order, min = 1, max = 10^9
 
 
 To run:
-cat datafile | scala Pizza.scala 
+cat Sample00_9.txt | scala Pizza.scala 
 
 Output is a minimum average waiting time.
+
