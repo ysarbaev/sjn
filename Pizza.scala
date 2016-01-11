@@ -1,5 +1,6 @@
 import io.Source
 import scala.annotation.tailrec
+import scala.collection.SortedMap
 
 object Pizza {
 	
@@ -23,7 +24,7 @@ object Pizza {
 
 	def isPizzaSizeValid(size: Int) = size >= MIN_PIZZA_SIZE && size <= MAX_PIZZA_SIZE
 
-	case class Order(time: Int, size: Int)
+	case class Order(time: Int, size: Int = 1)
 
 	def main(args: Array[String]): Unit = {
 
@@ -42,28 +43,29 @@ object Pizza {
 			throw new Exception("Orders queue size != $queueSize")
 		}
 
-		val orders = ordersRaw.map(parseOrder).sortBy(_.time)
-
+		val orders = ordersRaw.map(parseOrder).map()
+		val ordersTree = SortedSet(orders: _*)
 		if(queueSize == 0){
 			0
 		} else {
-			val total = calcTotalWaitingTime(orders)
+			val total = calcTotalWaitingTime(ordersTree)
 			(total / queueSize).toInt
 		}
 	}
 
-	def calcTotalWaitingTime(orders: List[Order]): Int = {
+	def calcTotalWaitingTime(orders: SortedMap[Order]): Int = {
 		val first = orders.head
 		calcTotalWaitingTimeRec(orders.tail, first.size, first.time + first.size)
 	}
 
+	//In fact, complexity O(n^2) 
 	@tailrec
-	def calcTotalWaitingTimeRec(rest: List[Order], accWaitingTime: Int, currentTime: Int): Int = {
+	def calcTotalWaitingTimeRec(rest: SortedMap[Order], accWaitingTime: Int, currentTime: Int): Int = {
 		if (rest.isEmpty) {
 			accWaitingTime
 		} else {
 			val (next, nextWT) = {
-				val waitingOrders = rest.filter(_.time <= currentTime)
+				val waitingOrders = rest.to(Order(currentTime))
 				if (waitingOrders.isEmpty) {
 					(rest.head, rest.head.size)
 				} else {
