@@ -18,6 +18,8 @@ object Pizza {
 
 	val PARSE_ORDER_RE = "\\s+".r
 
+	val TEST_OPTION = "--test"
+
 	def isOrdersQueueSizeValid(size: Int) = size >= MIN_ORDERS && size <= MAX_ORDERS
 
 	def isTimeValid(time: Int) = time >= MIN_TIME && time <= MAX_TIME
@@ -28,8 +30,11 @@ object Pizza {
 
 	def main(args: Array[String]): Unit = {
 
+		if (args.contains(TEST_OPTION)) {
+			test()
+			System.exit(0)
+		}
 		val result = process(Source.stdin.getLines.toList)
-
 		println(result)
 	}
 
@@ -69,7 +74,7 @@ object Pizza {
 			val (next:Order, nextWT:Int) = {
 				val waitingOrders = tree.to(currentTime)
 				if (waitingOrders.isEmpty) {
-					val min = tree.get(tree.keySet.min)
+					val min = tree(tree.keySet.min)
 					(min, min.size)
 				} else {
 					val min = waitingOrders.values.minBy(_.size)
@@ -97,6 +102,36 @@ object Pizza {
 				}
 			} 
 			case _ => orderErr(data)
+		}
+	}
+
+
+	def test() {
+		import scala.util.Random
+		def genOrders(orders: Int, maxTimeDistance: Int, maxSize: Int): List[Order] = {
+			var i = 0
+			(0 to orders).map { j =>
+				val o = Order(i, Random.nextInt(maxSize))
+				i += Random.nextInt(maxTimeDistance)
+				o
+			}.toList
+		}
+
+		def time(msg: String)(block: => Unit) {
+			val t = System.currentTimeMillis()
+			block
+			val tt = (System.currentTimeMillis() - t) / 1000
+			println(s"$msg, time = $tt")
+		}
+
+		time("1000") {
+			calcTotalWaitingTime(genOrders(1000, 100, 1000))
+		}
+		time("10000") {
+			calcTotalWaitingTime(genOrders(10000, 100, 1000))
+		}
+		time("20000") {
+			calcTotalWaitingTime(genOrders(20000, 100, 1000))
 		}
 	}
 }
