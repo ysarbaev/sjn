@@ -71,7 +71,7 @@ object Pizza {
 		if (tree.isEmpty) {
 			accWaitingTime
 		} else {
-			val (next:Order, nextWT:Int) = {
+			val (next, nextWT) = {
 				val waitingOrders = tree.to(currentTime)
 				if (waitingOrders.isEmpty) {
 					val min = tree(tree.keySet.min)
