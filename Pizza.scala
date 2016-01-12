@@ -34,11 +34,11 @@ object Pizza {
 			test()
 			System.exit(0)
 		}
-		val result = process(Source.stdin.getLines.toList)
+		val result = process(Source.stdin.getLines.toList.filterNot(_.isEmpty))
 		println(result)
 	}
 
-	def process(data: List[String]): Int = {
+	def process(data: List[String]): BigInt = {
 		val queueSize = data.headOption.getOrElse(throw new Exception("No data")).trim.toInt
 		if(! isOrdersQueueSizeValid(queueSize)) {
 			throw new Exception(s"Enter order size $MAX_ORDERS <= N >= $MIN_ORDERS")
@@ -49,19 +49,19 @@ object Pizza {
 		}
 
 		val orders = ordersRaw.map(parseOrder)
-		if(queueSize == 0){
-			0
-		} else {
-			val total = calcTotalWaitingTime(orders)
-			(total / queueSize).toInt
-		}
+		
+		calcAverageWaitingTime(orders)
 	}
 
-	def calcTotalWaitingTime(orders: List[Order]): BigInt = {
-		val first = orders.head
-		val tree = SortedMap(orders.map(o => o.time -> o): _*) - first.time
-		calcTotalWaitingTimeRec(tree, first.size, first.time + first.size)
-	}
+	def calcAverageWaitingTime(orders: List[Order]): BigInt = {
+		if (orders.isEmpty) {
+			0
+		} else {
+			val first = orders.head
+			val tree = SortedMap(orders.map(o => o.time -> o): _*) - first.time
+			calcTotalWaitingTimeRec(tree, first.size, first.time + first.size) / orders.size
+		}
+	} 
 
 	//Uses TreeMap to take subtrees more effective, in a typical 
 	//situation it will require O(NLogN) operations, however in the worst 
@@ -117,21 +117,18 @@ object Pizza {
 			}.toList
 		}
 
-		def time(vol: Int)(block: Int => Any) {
+		def time(vol: Int, dis: Int, size: Int)(block: List[Order] => BigInt) {
+			val orders = genOrders(vol, dis, size)
 			val t = System.currentTimeMillis()
-			val result = block(vol)
+			val result = block(orders)
 			val tt = (System.currentTimeMillis() - t) / 1000
-			println(s"$vol, time = $tt, $result")
+			println(s"vol = $vol, dis = $dis, size = $size, time = $tt, $result")
 		}
 
-		time(1000) { vol =>
-			calcTotalWaitingTime(genOrders(vol, 100, 1000)) / vol
-		}
-		time(10000) { vol =>
-			calcTotalWaitingTime(genOrders(vol, 100, 1000)) / vol
-		}
-		time(20000) { vol =>
-			calcTotalWaitingTime(genOrders(vol, 100, 1000)) / vol
-		}
+		time(1000, 1000, 10)(calcAverageWaitingTime)
+		time(10000, 1000, 10)(calcAverageWaitingTime)
+		time(1000, 10, 1000)(calcAverageWaitingTime)
+		time(10000, 10, 1000)(calcAverageWaitingTime)
+		
 	}
 }

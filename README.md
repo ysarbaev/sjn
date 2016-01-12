@@ -17,3 +17,5 @@ cat Sample00_9.txt | scala Pizza.scala
 
 Output is a minimum average waiting time.
 
+To run with random test data use:
+scala Pizza.scala --test
